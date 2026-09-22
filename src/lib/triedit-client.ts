@@ -5,10 +5,22 @@
 // - Writes that move GEN wait for FINALIZED, not just ACCEPTED.
 // - GEN/wei conversion happens ONLY here, explicitly, via genToWei().
 import { createClient, createAccount } from "genlayer-js";
-import { studioDevnet } from "genlayer-js/chains";
+import { studionet } from "genlayer-js/chains";
 import { TransactionStatus } from "genlayer-js/types";
 
 export const CONTRACT_ADDRESS = "0xCB4fa495eCade39ecd216D135254Be1b352C74A2";
+
+// Studio-dev: chain ID 61997, RPC https://studio-dev.genlayer.com/api.
+// The installed genlayer-js version only ships `studionet` (stable Studio,
+// chain 61999 - a different deployment), so studio-dev is derived here.
+export const studioDevnet = {
+  ...studionet,
+  id: 61997,
+  name: "Genlayer Studio Dev",
+  rpcUrls: {
+    default: { http: ["https://studio-dev.genlayer.com/api"] },
+  },
+} as typeof studionet;
 
 export type GenClient = ReturnType<typeof createClient>;
 
