@@ -26,7 +26,7 @@ export type GenClient = ReturnType<typeof createClient>;
 
 export function makeClient(privateKey: string): GenClient {
   const account = createAccount(privateKey as `0x${string}`);
-  return createClient({ chain: studioDevnet, account });
+  return createClient({ chain: studioDevnet, account } as any);
 }
 
 export function generatePrivateKey(): string {
