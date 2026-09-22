@@ -16,18 +16,25 @@ import {
   checkReview,
   closeCampaign,
   createCampaign,
-  generatePrivateKey,
   getCampaign,
   getCampaignCount,
   getReviewCount,
   getVerdict,
-  makeClient,
+  makeWalletClient,
   submitReview,
   weiToGen,
   type Campaign,
   type GenClient,
   type Verdict,
 } from "@/lib/triedit-client";
+import {
+  STUDIO_DEV_CHAIN_ID,
+  connectWallet,
+  ensureStudioDevNetwork,
+  getChainId,
+  getConnectedAddress,
+  getProvider,
+} from "@/lib/wallet";
 
 type View = "browse" | "create";
 
@@ -56,8 +63,6 @@ export const Route = createFileRoute("/app")({
   component: AppPage,
 });
 
-const STORAGE_KEY = "triedit.pk";
-
 function shorten(addr?: string) {
   if (!addr) return "";
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
@@ -69,45 +74,62 @@ function Gold({ children }: { children: React.ReactNode }) {
 
 function AppPage() {
   const search = Route.useSearch();
-  const [privateKey, setPrivateKey] = useState<string | null>(null);
-  const [keyInput, setKeyInput] = useState("");
   const [address, setAddress] = useState<string>("");
+  const [chainId, setChainId] = useState<number | null>(null);
+  const [connecting, setConnecting] = useState(false);
+  const [walletError, setWalletError] = useState<string>("");
   const [view, setView] = useState<View>(search.view === "create" ? "create" : "browse");
   const [selected, setSelected] = useState<number | null>(null);
 
+  // Pick up an already-authorized account + react to wallet changes.
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) setPrivateKey(stored);
+    let alive = true;
+    getConnectedAddress().then((addr) => alive && setAddress(addr ?? ""));
+    getChainId().then((id) => alive && setChainId(id));
+
+    const provider = getProvider();
+    const onAccounts = (accounts: string[]) => setAddress(accounts?.[0] ?? "");
+    const onChain = (hex: string) => setChainId(parseInt(hex, 16));
+    provider?.on?.("accountsChanged", onAccounts);
+    provider?.on?.("chainChanged", onChain);
+    return () => {
+      alive = false;
+      provider?.removeListener?.("accountsChanged", onAccounts);
+      provider?.removeListener?.("chainChanged", onChain);
+    };
   }, []);
 
+  const wrongNetwork = Boolean(address) && chainId !== null && chainId !== STUDIO_DEV_CHAIN_ID;
+
   const client: GenClient | null = useMemo(
-    () => (privateKey ? makeClient(privateKey) : null),
-    [privateKey],
+    () => (address && !wrongNetwork ? makeWalletClient(address) : null),
+    [address, wrongNetwork],
   );
 
-  useEffect(() => {
-    if (!client) {
-      setAddress("");
-      return;
+  const handleConnect = async () => {
+    setWalletError("");
+    setConnecting(true);
+    try {
+      const { address: addr } = await connectWallet();
+      setAddress(addr);
+      setChainId(await getChainId());
+    } catch (err: any) {
+      setWalletError(err?.message ?? "Could not connect your wallet.");
+    } finally {
+      setConnecting(false);
     }
-    const acct = (client as any).account;
-    setAddress(acct?.address ?? "");
-  }, [client]);
-
-  const connect = (key: string) => {
-    const k = key.trim();
-    if (!/^0x[0-9a-fA-F]{64}$/.test(k)) {
-      alert("Enter a valid 32-byte private key starting with 0x.");
-      return;
-    }
-    localStorage.setItem(STORAGE_KEY, k);
-    setPrivateKey(k);
-    setKeyInput("");
   };
 
-  const disconnect = () => {
-    localStorage.removeItem(STORAGE_KEY);
-    setPrivateKey(null);
+  const handleSwitchNetwork = async () => {
+    setWalletError("");
+    const provider = getProvider();
+    if (!provider) return;
+    try {
+      await ensureStudioDevNetwork(provider);
+      setChainId(await getChainId());
+    } catch (err: any) {
+      setWalletError(err?.message ?? "Could not switch network.");
+    }
   };
 
   return (
@@ -123,44 +145,47 @@ function AppPage() {
               </span>
               <div>
                 <p className="font-semibold">
-                  {privateKey ? "Wallet connected" : "Connect your wallet"}
+                  {address
+                    ? wrongNetwork
+                      ? "Wrong network"
+                      : "Wallet connected"
+                    : "Connect your wallet"}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {privateKey
-                    ? `${shorten(address)} · GenLayer Studio-dev (chain 61997)`
-                    : "Use a GenLayer Studio-dev key, or generate a fresh one to explore."}
+                  {address
+                    ? wrongNetwork
+                      ? `${shorten(address)} · switch to GenLayer Studio-dev (chain ${STUDIO_DEV_CHAIN_ID}) to continue`
+                      : `${shorten(address)} · GenLayer Studio-dev (chain ${STUDIO_DEV_CHAIN_ID})`
+                    : "Use MetaMask, Rabby or any EVM wallet on GenLayer Studio-dev."}
                 </p>
+                {walletError ? (
+                  <p className="mt-1 text-sm text-danger">{walletError}</p>
+                ) : null}
               </div>
             </div>
 
-            {privateKey ? (
-              <button
-                onClick={disconnect}
-                className="rounded-full border border-border bg-white/70 px-4 py-2 text-sm font-medium hover:bg-white"
-              >
-                Disconnect
-              </button>
-            ) : (
-              <div className="flex flex-wrap items-center gap-2">
-                <input
-                  value={keyInput}
-                  onChange={(e) => setKeyInput(e.target.value)}
-                  placeholder="0x… private key"
-                  className="w-64 rounded-full border border-border bg-white/80 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-ring/40"
-                />
+            {address ? (
+              wrongNetwork ? (
                 <button
-                  onClick={() => connect(keyInput)}
+                  onClick={handleSwitchNetwork}
                   className="gradient-brand rounded-full px-5 py-2 text-sm font-semibold text-white"
                 >
-                  Connect
+                  Switch to Studio-dev
                 </button>
-                <button
-                  onClick={() => connect(generatePrivateKey())}
-                  className="rounded-full border border-border bg-white/70 px-4 py-2 text-sm font-medium hover:bg-white"
-                >
-                  Generate key
-                </button>
-              </div>
+              ) : (
+                <span className="rounded-full border border-border bg-white/70 px-4 py-2 text-sm font-medium">
+                  {shorten(address)}
+                </span>
+              )
+            ) : (
+              <button
+                onClick={handleConnect}
+                disabled={connecting}
+                className="gradient-brand flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                {connecting ? <Loader2 size={15} className="animate-spin" /> : null}
+                Connect Wallet
+              </button>
             )}
           </div>
         </section>
