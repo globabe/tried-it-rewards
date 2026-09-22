@@ -1,7 +1,8 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Menu, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronDown, Loader2, LogOut, Menu, User, X } from "lucide-react";
 import { BrandLogo } from "./Brand";
+import { shortenAddress, useWallet } from "@/lib/wallet-context";
 
 const links = [
   { label: "Explore Projects", to: "/app" as const },
@@ -10,9 +11,83 @@ const links = [
   { label: "About", to: "/" as const, hash: "about" },
 ];
 
+function WalletButton() {
+  const { address, wrongNetwork, connecting, connect, disconnect, switchNetwork } = useWallet();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [open]);
+
+  if (!address) {
+    return (
+      <button
+        onClick={() => void connect()}
+        disabled={connecting}
+        className="flex items-center gap-2 rounded-full border border-border bg-white/70 px-4 py-2 text-sm font-medium transition-colors hover:bg-white disabled:opacity-60"
+      >
+        {connecting && <Loader2 size={14} className="animate-spin" />}
+        Connect Wallet
+      </button>
+    );
+  }
+
+  if (wrongNetwork) {
+    return (
+      <button
+        onClick={() => void switchNetwork()}
+        className="rounded-full border border-danger/40 bg-white/70 px-4 py-2 text-sm font-medium text-danger hover:bg-white"
+      >
+        Switch to Studio-dev
+      </button>
+    );
+  }
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-2 rounded-full border border-border bg-white/70 py-1.5 pl-2 pr-3 text-sm font-medium transition-colors hover:bg-white"
+      >
+        <span className="size-2 rounded-full bg-success" aria-hidden />
+        <span className="font-mono">{shortenAddress(address)}</span>
+        <ChevronDown size={14} className={`transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="glass-card absolute right-0 mt-2 w-52 p-1.5 shadow-lg">
+          <p className="px-3 py-2 text-xs text-muted-foreground">Connected · Studio-dev</p>
+          <Link
+            to="/profile"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-white/80"
+          >
+            <User size={15} /> My profile
+          </Link>
+          <button
+            onClick={() => {
+              setOpen(false);
+              void disconnect();
+            }}
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-danger hover:bg-white/80"
+          >
+            <LogOut size={15} /> Disconnect
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const { address, connect, disconnect } = useWallet();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -48,12 +123,7 @@ export function Nav() {
         </nav>
 
         <div className="hidden items-center gap-3 lg:flex">
-          <Link
-            to="/app"
-            className="rounded-full border border-border bg-white/70 px-4 py-2 text-sm font-medium transition-colors hover:bg-white"
-          >
-            Connect Wallet
-          </Link>
+          <WalletButton />
           <Link
             to="/app"
             search={{ view: "create" }}
@@ -86,15 +156,44 @@ export function Nav() {
                 {l.label}
               </Link>
             ))}
+            {address && (
+              <Link
+                to="/profile"
+                onClick={() => setOpen(false)}
+                className="rounded-lg px-2 py-2.5 hover:bg-white/70"
+              >
+                My profile
+              </Link>
+            )}
           </nav>
-          <Link
-            to="/app"
-            search={{ view: "create" }}
-            onClick={() => setOpen(false)}
-            className="gradient-brand block rounded-full px-5 py-3 text-center text-sm font-semibold text-white"
-          >
-            Launch a Project
-          </Link>
+          <div className="flex flex-col gap-2">
+            {address ? (
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  void disconnect();
+                }}
+                className="rounded-full border border-border bg-white/70 px-5 py-3 text-sm font-medium"
+              >
+                Disconnect {shortenAddress(address)}
+              </button>
+            ) : (
+              <button
+                onClick={() => void connect()}
+                className="rounded-full border border-border bg-white/70 px-5 py-3 text-sm font-medium"
+              >
+                Connect Wallet
+              </button>
+            )}
+            <Link
+              to="/app"
+              search={{ view: "create" }}
+              onClick={() => setOpen(false)}
+              className="gradient-brand block rounded-full px-5 py-3 text-center text-sm font-semibold text-white"
+            >
+              Launch a Project
+            </Link>
+          </div>
         </div>
       )}
     </header>
