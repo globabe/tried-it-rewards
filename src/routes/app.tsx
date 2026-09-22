@@ -20,7 +20,6 @@ import {
   getCampaignCount,
   getReviewCount,
   getVerdict,
-  makeReadClient,
   makeWalletClient,
   submitReview,
   weiToGen,
