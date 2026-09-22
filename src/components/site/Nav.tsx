@@ -4,7 +4,7 @@ import { Menu, X } from "lucide-react";
 import { BrandLogo } from "./Brand";
 
 const links = [
-  { label: "Explore Projects", to: "/app" as const, hash: undefined },
+  { label: "Explore Projects", to: "/app" as const },
   { label: "How It Works", to: "/" as const, hash: "how-it-works" },
   { label: "For Projects", to: "/" as const, hash: "for-projects" },
   { label: "About", to: "/" as const, hash: "about" },
@@ -39,7 +39,7 @@ export function Nav() {
             <Link
               key={l.label}
               to={l.to}
-              hash={l.hash}
+              {...("hash" in l ? { hash: (l as { hash: string }).hash } : {})}
               className="transition-colors hover:text-foreground"
             >
               {l.label}
@@ -79,7 +79,7 @@ export function Nav() {
               <Link
                 key={l.label}
                 to={l.to}
-                hash={l.hash}
+                {...("hash" in l ? { hash: (l as { hash: string }).hash } : {})}
                 onClick={() => setOpen(false)}
                 className="rounded-lg px-2 py-2.5 hover:bg-white/70"
               >

@@ -32,8 +32,8 @@ import {
 type View = "browse" | "create";
 
 export const Route = createFileRoute("/app")({
-  validateSearch: (search: Record<string, unknown>): { view?: View } => ({
-    view: search["view"] === "create" ? "create" : undefined,
+  validateSearch: (search: Record<string, unknown>): { view?: View | undefined } => ({
+    view: search["view"] === "create" ? ("create" as View) : undefined,
   }),
   head: () => ({
     meta: [
