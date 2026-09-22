@@ -99,24 +99,29 @@ function readOnly(client: GenClient, functionName: string, args: unknown[] = [])
   });
 }
 
+// The contract keys everything by string IDs: "campaign_0", "campaign_1", ...
+// and "review_0", "review_1", ... (confirmed from the deployed source).
+export const campaignKey = (n: number) => `campaign_${n}`;
+export const reviewKey = (n: number) => `review_${n}`;
+
 export type Campaign = {
-  id?: number | string;
-  product_name?: string;
-  product_link?: string;
-  product_image_url?: string;
-  review_criteria?: string;
-  reward_per_review?: string | number;
-  remaining_budget?: string | number;
-  owner?: string;
-  is_open?: boolean;
-  [key: string]: unknown;
+  campaign_id: string;
+  owner: string;
+  product_name: string;
+  product_link: string;
+  product_image_url: string;
+  review_criteria: string;
+  reward_per_review: string; // wei
+  total_budget: string; // wei
+  remaining_budget: string; // wei
+  closed: boolean;
 };
 
 export type Verdict = {
   accepted?: boolean;
   reason?: string;
-  reward_paid?: string | number;
-  [key: string]: unknown;
+  paid?: boolean;
+  status?: "not_checked";
 };
 
 function parse<T>(raw: unknown): T {
@@ -151,7 +156,7 @@ export async function createCampaign(
   );
 }
 
-export async function getCampaign(client: GenClient, campaignId: number) {
+export async function getCampaign(client: GenClient, campaignId: string) {
   return parse<Campaign>(await readOnly(client, "get_campaign", [campaignId]));
 }
 
@@ -160,27 +165,66 @@ export async function getCampaignCount(client: GenClient) {
   return parseInt(String(raw), 10) || 0;
 }
 
-export async function closeCampaign(client: GenClient, campaignId: number) {
+/** No on-chain array: loop 0..count-1 and read each campaign. */
+export async function listCampaigns(client: GenClient): Promise<Campaign[]> {
+  const count = await getCampaignCount(client);
+  const results = await Promise.all(
+    Array.from({ length: count }, (_, i) =>
+      getCampaign(client, campaignKey(i)).catch(() => null),
+    ),
+  );
+  return results.filter((c): c is Campaign => c !== null).reverse();
+}
+
+export async function closeCampaign(client: GenClient, campaignId: string) {
   return writeAndWait(client, "close_campaign", [campaignId]);
 }
 
 export async function submitReview(
   client: GenClient,
-  campaignId: number,
+  campaignId: string,
   reviewText: string,
 ) {
   return writeAndWait(client, "submit_review", [campaignId, reviewText]);
 }
 
-export async function checkReview(client: GenClient, reviewId: number) {
+export async function checkReview(client: GenClient, reviewId: string) {
   return writeAndWait(client, "check_review", [reviewId]);
 }
 
-export async function getVerdict(client: GenClient, reviewId: number) {
+export async function getVerdict(client: GenClient, reviewId: string) {
   return parse<Verdict>(await readOnly(client, "get_verdict", [reviewId]));
 }
 
 export async function getReviewCount(client: GenClient) {
   const raw = await readOnly(client, "get_review_count", []);
   return parseInt(String(raw), 10) || 0;
+}
+
+// ---------- Reviews submitted from this browser ----------
+// The contract has no "reviews by reviewer" lookup, so we remember the
+// review IDs a wallet submitted here and read their verdicts from chain.
+export type MyReview = {
+  reviewId: string;
+  campaignId: string;
+  productName: string;
+  text: string;
+  submittedAt: number;
+};
+
+const myReviewsKey = (address: string) => `triedit.reviews.${address.toLowerCase()}`;
+
+export function loadMyReviews(address: string): MyReview[] {
+  if (typeof window === "undefined" || !address) return [];
+  try {
+    return JSON.parse(localStorage.getItem(myReviewsKey(address)) ?? "[]");
+  } catch {
+    return [];
+  }
+}
+
+export function saveMyReview(address: string, review: MyReview) {
+  const list = loadMyReviews(address).filter((r) => r.reviewId !== review.reviewId);
+  list.unshift(review);
+  localStorage.setItem(myReviewsKey(address), JSON.stringify(list));
 }
