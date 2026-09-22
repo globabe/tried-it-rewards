@@ -1,11 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Loader2, Plus, RefreshCw, Wallet } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Loader2, MessageSquareText, Plus, RefreshCw, Wallet } from "lucide-react";
 import { Nav } from "@/components/site/Nav";
 import { Footer } from "@/components/site/Footer";
 import { CampaignCard, Gold, VerdictPanel } from "@/components/app/CampaignCard";
+import { summarizeReviews } from "@/components/app/ProjectReviews";
 import { useCampaignList } from "@/hooks/use-campaigns";
-import { getVerdict, loadMyReviews, weiToGen, type MyReview, type Verdict } from "@/lib/triedit-client";
+import {
+  getVerdict,
+  listAllReviews,
+  loadMyReviews,
+  weiToGen,
+  type MyReview,
+  type Review,
+  type Verdict,
+} from "@/lib/triedit-client";
 import { shortenAddress, useWallet } from "@/lib/wallet-context";
 
 export const Route = createFileRoute("/profile")({
@@ -89,9 +98,22 @@ function ProfilePage() {
 }
 
 function MyProjects({ address }: { address: string }) {
+  const { readClient } = useWallet();
   const { campaigns, loading, error, reload } = useCampaignList();
   const mine = campaigns.filter((c) => c.owner.toLowerCase() === address.toLowerCase());
   const open = mine.filter((c) => !c.closed);
+
+  const [reviews, setReviews] = useState<Review[] | null>(null);
+  const loadReviews = useCallback(async () => {
+    try {
+      setReviews(await listAllReviews(readClient));
+    } catch {
+      setReviews([]);
+    }
+  }, [readClient]);
+  useEffect(() => {
+    void loadReviews();
+  }, [loadReviews]);
 
   const sum = (vals: string[]) => vals.reduce((a, v) => a + BigInt(v || "0"), 0n);
   const funded = sum(open.map((c) => c.total_budget));
@@ -103,7 +125,10 @@ function MyProjects({ address }: { address: string }) {
       <div className="mb-5 flex items-center justify-between gap-3">
         <h2 className="text-xl font-semibold">Projects I launched</h2>
         <button
-          onClick={() => void reload()}
+          onClick={() => {
+            void reload();
+            void loadReviews();
+          }}
           className="flex items-center gap-1.5 rounded-full border border-border bg-white/70 px-4 py-2 text-sm hover:bg-white"
         >
           <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Refresh
@@ -131,11 +156,53 @@ function MyProjects({ address }: { address: string }) {
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {mine.map((c) => (
-            <CampaignCard key={c.campaign_id} campaign={c} />
+            <div key={c.campaign_id} className="flex flex-col gap-2">
+              <CampaignCard campaign={c} />
+              <FeedbackSummary
+                campaignId={c.campaign_id}
+                reviews={reviews ? reviews.filter((r) => r.campaign_id === c.campaign_id) : null}
+              />
+            </div>
           ))}
         </div>
       )}
     </section>
+  );
+}
+
+function FeedbackSummary({ campaignId, reviews }: { campaignId: string; reviews: Review[] | null }) {
+  if (!reviews) {
+    return (
+      <p className="flex items-center gap-1.5 px-2 text-xs text-muted-foreground">
+        <Loader2 size={12} className="animate-spin" /> Loading feedback…
+      </p>
+    );
+  }
+  const s = summarizeReviews(reviews);
+  return (
+    <Link
+      to="/app"
+      search={{ campaign: campaignId }}
+      className="flex items-center justify-between gap-2 rounded-xl border border-border bg-white/60 px-4 py-2.5 text-sm hover:bg-white"
+    >
+      <span className="flex items-center gap-1.5">
+        <MessageSquareText size={14} className="text-muted-foreground" />
+        {s.total === 0 ? (
+          <span className="text-muted-foreground">No reviews yet</span>
+        ) : (
+          <span>
+            <span className="font-semibold">{s.total}</span> review{s.total === 1 ? "" : "s"}
+            <span className="text-muted-foreground">
+              {" "}
+              · <span className="text-success">{s.accepted} accepted</span> ·{" "}
+              <span className="text-danger">{s.rejected} rejected</span>
+              {s.pending ? ` · ${s.pending} awaiting` : ""}
+            </span>
+          </span>
+        )}
+      </span>
+      {s.total > 0 && <span className="text-xs font-medium text-primary">Read</span>}
+    </Link>
   );
 }
 

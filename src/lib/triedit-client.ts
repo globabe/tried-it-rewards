@@ -11,7 +11,7 @@ import { TransactionStatus } from "genlayer-js/types";
 
 export { studioDevnet };
 
-export const CONTRACT_ADDRESS = "0xCB4fa495eCade39ecd216D135254Be1b352C74A2";
+export const CONTRACT_ADDRESS = "0xf57457DbF1828229627b3F73aCC4C54C3FcA7BC8";
 
 export type GenClient = ReturnType<typeof createClient>;
 
@@ -199,6 +199,40 @@ export async function getVerdict(client: GenClient, reviewId: string) {
 export async function getReviewCount(client: GenClient) {
   const raw = await readOnly(client, "get_review_count", []);
   return parseInt(String(raw), 10) || 0;
+}
+
+export type Review = {
+  review_id: string;
+  campaign_id: string;
+  reviewer: string;
+  review_text: string;
+  verdict: Verdict;
+};
+
+/** Full review record: text, campaign, reviewer address and verdict. */
+export async function getReview(client: GenClient, reviewId: string) {
+  return parse<Review>(await readOnly(client, "get_review", [reviewId]));
+}
+
+/** Every review on the contract (loops 0..count-1, no on-chain array). */
+export async function listAllReviews(client: GenClient): Promise<Review[]> {
+  const count = await getReviewCount(client);
+  const results = await Promise.all(
+    Array.from({ length: count }, (_, i) =>
+      getReview(client, reviewKey(i)).catch(() => null),
+    ),
+  );
+  return results.filter((r): r is Review => r !== null);
+}
+
+/**
+ * Every review for one campaign. There's no on-chain index by campaign,
+ * so this scans all reviews and filters - O(total reviews). Fine at
+ * current scale; worth revisiting if review volume grows.
+ */
+export async function getReviewsForCampaign(client: GenClient, campaignId: string) {
+  const all = await listAllReviews(client);
+  return all.filter((r) => r.campaign_id === campaignId);
 }
 
 // ---------- Reviews submitted from this browser ----------

@@ -11,6 +11,7 @@ import {
 import { Nav } from "@/components/site/Nav";
 import { Footer } from "@/components/site/Footer";
 import { CampaignCard, Gold, StatusBadge, VerdictPanel } from "@/components/app/CampaignCard";
+import { ProjectReviews } from "@/components/app/ProjectReviews";
 import { useCampaignList } from "@/hooks/use-campaigns";
 import {
   campaignKey,
@@ -436,6 +437,8 @@ function CampaignDetail({ campaignId, onBack }: { campaignId: string; onBack: ()
           {error && <p className="mt-4 text-sm text-danger">{error}</p>}
         </section>
       </div>
+
+      {isOwner && campaign && <ProjectReviews campaign={campaign} />}
     </div>
   );
 }
