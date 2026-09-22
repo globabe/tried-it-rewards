@@ -16,18 +16,26 @@ import {
   checkReview,
   closeCampaign,
   createCampaign,
-  generatePrivateKey,
   getCampaign,
   getCampaignCount,
   getReviewCount,
   getVerdict,
-  makeClient,
+  makeReadClient,
+  makeWalletClient,
   submitReview,
   weiToGen,
   type Campaign,
   type GenClient,
   type Verdict,
 } from "@/lib/triedit-client";
+import {
+  STUDIO_DEV_CHAIN_ID,
+  connectWallet,
+  ensureStudioDevNetwork,
+  getChainId,
+  getConnectedAddress,
+  getProvider,
+} from "@/lib/wallet";
 
 type View = "browse" | "create";
 
