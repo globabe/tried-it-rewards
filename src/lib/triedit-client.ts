@@ -25,20 +25,23 @@ export const studioDevnet = {
 
 export type GenClient = ReturnType<typeof createClient>;
 
-export function makeClient(privateKey: string): GenClient {
-  const account = createAccount(privateKey as `0x${string}`);
-  return createClient({ chain: studioDevnet, account } as any);
+/**
+ * Signing client backed by the visitor's browser wallet (MetaMask, Rabby, ...).
+ * The wallet holds the key and signs every transaction - the app never sees it.
+ */
+export function makeWalletClient(address: string): GenClient {
+  const provider = getProvider();
+  if (!provider) throw new Error("No browser wallet detected.");
+  return createClient({
+    chain: studioDevnet,
+    account: address as `0x${string}`,
+    provider,
+  } as any);
 }
 
-export function generatePrivateKey(): string {
-  const bytes = new Uint8Array(32);
-  crypto.getRandomValues(bytes);
-  return (
-    "0x" +
-    Array.from(bytes)
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("")
-  );
+/** Read-only client - lets anyone browse campaigns before connecting. */
+export function makeReadClient(): GenClient {
+  return createClient({ chain: studioDevnet } as any);
 }
 
 /** Human GEN amount -> wei BigInt. The only GEN->wei conversion in the app. */
