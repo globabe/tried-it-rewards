@@ -2,17 +2,16 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   ArrowLeft,
-  CheckCircle2,
   ExternalLink,
   Loader2,
   Plus,
   RefreshCw,
   Wallet,
-  XCircle,
 } from "lucide-react";
 import { Nav } from "@/components/site/Nav";
 import { Footer } from "@/components/site/Footer";
-import { CampaignCard, Gold, StatusBadge } from "@/components/app/CampaignCard";
+import { CampaignCard, Gold, StatusBadge, VerdictPanel } from "@/components/app/CampaignCard";
+import { useCampaignList } from "@/hooks/use-campaigns";
 import {
   campaignKey,
   checkReview,
@@ -22,7 +21,6 @@ import {
   getCampaignCount,
   getReviewCount,
   getVerdict,
-  listCampaigns,
   reviewKey,
   saveMyReview,
   submitReview,
@@ -181,31 +179,6 @@ function WalletPanel() {
   );
 }
 
-export function useCampaignList() {
-  const { readClient } = useWallet();
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      setCampaigns(await listCampaigns(readClient));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoading(false);
-    }
-  }, [readClient]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  return { campaigns, loading, error, reload: load };
-}
-
 function Browse() {
   const { address } = useWallet();
   const { campaigns, loading, error, reload } = useCampaignList();
@@ -323,8 +296,6 @@ function CampaignDetail({ campaignId, onBack }: { campaignId: string; onBack: ()
       setClosing(false);
     }
   };
-
-  const accepted = verdict?.accepted === true;
 
   return (
     <div>
@@ -465,37 +436,6 @@ function CampaignDetail({ campaignId, onBack }: { campaignId: string; onBack: ()
           {error && <p className="mt-4 text-sm text-danger">{error}</p>}
         </section>
       </div>
-    </div>
-  );
-}
-
-export function VerdictPanel({ verdict, campaign }: { verdict: Verdict; campaign: Campaign | null }) {
-  if (verdict.status === "not_checked") {
-    return (
-      <div className="mt-5 rounded-xl bg-white/70 p-4 text-sm text-muted-foreground">
-        Not evaluated yet.
-      </div>
-    );
-  }
-  const accepted = verdict.accepted === true;
-  return (
-    <div className={`mt-5 rounded-xl p-5 ${accepted ? "bg-success/8" : "bg-danger/8"}`}>
-      <p className={`flex items-center gap-2 font-semibold ${accepted ? "text-success" : "text-danger"}`}>
-        {accepted ? <CheckCircle2 size={18} /> : <XCircle size={18} />}
-        {accepted ? "Accepted" : "Rejected"}
-      </p>
-      {verdict.reason && <p className="mt-2 text-sm text-muted-foreground">{verdict.reason}</p>}
-      {accepted && (
-        <p className="mt-3 text-sm">
-          {verdict.paid && campaign ? (
-            <>
-              Paid <Gold>{weiToGen(campaign.reward_per_review)} GEN</Gold>
-            </>
-          ) : (
-            "Accepted, but the campaign's budget had run out — no payout."
-          )}
-        </p>
-      )}
     </div>
   );
 }

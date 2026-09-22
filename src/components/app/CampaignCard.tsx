@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { weiToGen, type Campaign } from "@/lib/triedit-client";
+import { CheckCircle2, XCircle } from "lucide-react";
+import { weiToGen, type Campaign, type Verdict } from "@/lib/triedit-client";
 
 export function Gold({ children }: { children: ReactNode }) {
   return <span className="font-semibold text-gold">{children}</span>;
@@ -67,5 +68,36 @@ export function CampaignCard({
         </div>
       </div>
     </Link>
+  );
+}
+
+export function VerdictPanel({ verdict, campaign }: { verdict: Verdict; campaign: Campaign | null }) {
+  if (verdict.status === "not_checked") {
+    return (
+      <div className="mt-5 rounded-xl bg-white/70 p-4 text-sm text-muted-foreground">
+        Not evaluated yet.
+      </div>
+    );
+  }
+  const accepted = verdict.accepted === true;
+  return (
+    <div className={`mt-5 rounded-xl p-5 ${accepted ? "bg-success/8" : "bg-danger/8"}`}>
+      <p className={`flex items-center gap-2 font-semibold ${accepted ? "text-success" : "text-danger"}`}>
+        {accepted ? <CheckCircle2 size={18} /> : <XCircle size={18} />}
+        {accepted ? "Accepted" : "Rejected"}
+      </p>
+      {verdict.reason && <p className="mt-2 text-sm text-muted-foreground">{verdict.reason}</p>}
+      {accepted && (
+        <p className="mt-3 text-sm">
+          {verdict.paid && campaign ? (
+            <>
+              Paid <Gold>{weiToGen(campaign.reward_per_review)} GEN</Gold>
+            </>
+          ) : (
+            "Accepted, but the campaign's budget had run out — no payout."
+          )}
+        </p>
+      )}
+    </div>
   );
 }

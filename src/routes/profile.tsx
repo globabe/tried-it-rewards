@@ -3,9 +3,9 @@ import { useEffect, useState } from "react";
 import { Loader2, Plus, RefreshCw, Wallet } from "lucide-react";
 import { Nav } from "@/components/site/Nav";
 import { Footer } from "@/components/site/Footer";
-import { CampaignCard, Gold } from "@/components/app/CampaignCard";
-import { VerdictPanel, useCampaignList } from "./app";
-import { genToWei, getVerdict, loadMyReviews, weiToGen, type MyReview, type Verdict } from "@/lib/triedit-client";
+import { CampaignCard, Gold, VerdictPanel } from "@/components/app/CampaignCard";
+import { useCampaignList } from "@/hooks/use-campaigns";
+import { getVerdict, loadMyReviews, weiToGen, type MyReview, type Verdict } from "@/lib/triedit-client";
 import { shortenAddress, useWallet } from "@/lib/wallet-context";
 
 export const Route = createFileRoute("/profile")({
@@ -212,5 +212,3 @@ function MyReviews({ address }: { address: string }) {
   );
 }
 
-// Keep the explicit-conversion helper referenced so all GEN math stays in one module.
-void genToWei;
