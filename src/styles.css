@@ -45,7 +45,7 @@
     Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 
   /* #FAF8FF */
-  --background: oklch(0.977 0.012 300);
+  --background: oklch(0.984 0.006 300);
   /* #171426 */
   --foreground: oklch(0.203 0.029 285);
   --card: oklch(1 0 0 / 60%);
@@ -138,12 +138,12 @@
   background-image:
     radial-gradient(
       circle at 15% 0%,
-      color-mix(in oklab, #6b3fa0 14%, transparent),
+      color-mix(in oklab, #6b3fa0 7%, transparent),
       transparent 55%
     ),
     radial-gradient(
       circle at 85% 10%,
-      color-mix(in oklab, #e0399b 12%, transparent),
+      color-mix(in oklab, #e0399b 6%, transparent),
       transparent 50%
     );
 }

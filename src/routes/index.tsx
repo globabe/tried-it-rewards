@@ -119,8 +119,7 @@ function HeroMockup() {
   ];
 
   return (
-    <div className="glass-card relative p-6">
-      <div className="gradient-brand absolute -inset-px -z-10 rounded-[calc(var(--radius)+8px)] opacity-20 blur-xl" />
+    <div className="glass-card relative isolate p-6">
       {stages.map((s, i) => (
         <div
           key={s.label}
