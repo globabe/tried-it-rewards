@@ -4,7 +4,8 @@
 // - Every write needs a real FeesDistribution + quoted fee value.
 // - Writes that move GEN wait for FINALIZED, not just ACCEPTED.
 // - GEN/wei conversion happens ONLY here, explicitly, via genToWei().
-import { createClient, createAccount } from "genlayer-js";
+import { createClient } from "genlayer-js";
+import { getProvider } from "./wallet";
 import { studionet } from "genlayer-js/chains";
 import { TransactionStatus } from "genlayer-js/types";
 
