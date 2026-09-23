@@ -305,6 +305,7 @@ function CampaignDetail({ campaignId, onBack }: { campaignId: string; onBack: ()
       setVerdict(await getVerdict(readClient, reviewId));
       setStage("done");
       void load();
+      void loadMine();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setStage("idle");
