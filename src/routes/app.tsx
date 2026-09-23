@@ -21,12 +21,14 @@ import {
   getCampaign,
   getCampaignCount,
   getReviewCount,
+  getReviewsForCampaign,
   getVerdict,
   reviewKey,
   saveMyReview,
   submitReview,
   weiToGen,
   type Campaign,
+  type Review,
   type Verdict,
 } from "@/lib/triedit-client";
 import { STUDIO_DEV_CHAIN_ID } from "@/lib/wallet";
