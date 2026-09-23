@@ -424,12 +424,23 @@ function CampaignDetail({ campaignId, onBack }: { campaignId: string; onBack: ()
               <h3 className="text-lg font-semibold">This campaign is closed</h3>
               <p className="mt-1 text-sm text-muted-foreground">It's no longer accepting reviews.</p>
             </>
+          ) : myReview && stage !== "done" ? (
+            <>
+              <h3 className="text-lg font-semibold">You already reviewed this project</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                One review per wallet, so the rewards spread across different testers.
+              </p>
+              <p className="mt-4 whitespace-pre-wrap rounded-xl bg-white/70 p-4 text-sm">
+                {myReview.review_text}
+              </p>
+              {campaign && <VerdictPanel verdict={myReview.verdict} campaign={campaign} />}
+            </>
           ) : (
             <>
               <h3 className="text-lg font-semibold">Submit your review</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Cover what the campaign asks for. Your review is evaluated against the campaign's
-                criteria by GenLayer's validators.
+                One review per wallet. Cover what the campaign asks for — your review is evaluated
+                against the campaign's criteria by GenLayer's validators.
               </p>
               <textarea
                 value={reviewText}
@@ -440,7 +451,13 @@ function CampaignDetail({ campaignId, onBack }: { campaignId: string; onBack: ()
               />
               <button
                 onClick={() => void onSubmit()}
-                disabled={!client || stage === "submitting" || stage === "checking" || !reviewText.trim()}
+                disabled={
+                  !client ||
+                  checkingExisting ||
+                  stage === "submitting" ||
+                  stage === "checking" ||
+                  !reviewText.trim()
+                }
                 className="gradient-brand mt-4 flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
               >
                 {stage === "submitting" && <Loader2 size={16} className="animate-spin" />}
