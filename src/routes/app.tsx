@@ -244,6 +244,8 @@ function CampaignDetail({ campaignId, onBack }: { campaignId: string; onBack: ()
   const [verdict, setVerdict] = useState<Verdict | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [closing, setClosing] = useState(false);
+  const [myReview, setMyReview] = useState<Review | null>(null);
+  const [checkingExisting, setCheckingExisting] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -257,10 +259,33 @@ function CampaignDetail({ campaignId, onBack }: { campaignId: string; onBack: ()
     void load();
   }, [load]);
 
+  // One review per wallet: look for a review this wallet already left here.
+  const loadMine = useCallback(async () => {
+    if (!address) {
+      setMyReview(null);
+      return;
+    }
+    setCheckingExisting(true);
+    try {
+      const list = await getReviewsForCampaign(readClient, campaignId);
+      setMyReview(
+        list.find((r) => r.reviewer?.toLowerCase() === address.toLowerCase()) ?? null,
+      );
+    } catch {
+      /* non-fatal: the contract is the final guard */
+    } finally {
+      setCheckingExisting(false);
+    }
+  }, [readClient, campaignId, address]);
+
+  useEffect(() => {
+    void loadMine();
+  }, [loadMine]);
+
   const isOwner = !!address && !!campaign && campaign.owner.toLowerCase() === address.toLowerCase();
 
   const onSubmit = async () => {
-    if (!client || !campaign || !reviewText.trim()) return;
+    if (!client || !campaign || !reviewText.trim() || myReview) return;
     setError(null);
     setVerdict(null);
     setStage("submitting");
