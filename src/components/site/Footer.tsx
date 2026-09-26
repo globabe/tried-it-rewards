@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { BrandLogo } from "./Brand";
 
-const CONTRACT_ADDRESS = "0xf57457DbF1828229627b3F73aCC4C54C3FcA7BC8";
+const CONTRACT_ADDRESS = "0x3ea24C0B49e518ea16814Ffa0236F67D0c79D48b";
 
 export function Footer() {
   return (

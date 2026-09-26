@@ -11,7 +11,7 @@ import { TransactionStatus } from "genlayer-js/types";
 
 export { studioDevnet };
 
-export const CONTRACT_ADDRESS = "0xf57457DbF1828229627b3F73aCC4C54C3FcA7BC8";
+export const CONTRACT_ADDRESS = "0x3ea24C0B49e518ea16814Ffa0236F67D0c79D48b";
 
 export type GenClient = ReturnType<typeof createClient>;
 
@@ -137,6 +137,7 @@ export async function createCampaign(
     reviewCriteria: string;
     rewardPerReviewGen: string;
     totalBudgetGen: string;
+    evidenceLink?: string;
   },
 ) {
   const rewardWei = genToWei(opts.rewardPerReviewGen);
@@ -151,6 +152,7 @@ export async function createCampaign(
       opts.productImageUrl,
       opts.reviewCriteria,
       rewardWei,
+      (opts.evidenceLink ?? "").trim(),
     ],
     budgetWei,
   );
