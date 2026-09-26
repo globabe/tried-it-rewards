@@ -497,6 +497,7 @@ function CreateCampaign({ onCreated }: { onCreated: (campaignId: string | null) 
     reviewCriteria: "",
     rewardPerReviewGen: "0.1",
     totalBudgetGen: "0.5",
+    evidenceLink: "",
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -574,6 +575,22 @@ function CreateCampaign({ onCreated }: { onCreated: (campaignId: string | null) 
             onChange={set("reviewCriteria")}
             placeholder="Review must mention a specific feature you used and whether it worked as expected."
           />
+        </div>
+        <div>
+          <label className="text-sm font-medium">
+            Evidence link <span className="text-muted-foreground">(optional)</span>
+          </label>
+          <input
+            className={`${field} mt-1.5`}
+            value={form.evidenceLink}
+            onChange={set("evidenceLink")}
+            placeholder="https://…"
+          />
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            Only add this if the link genuinely describes your product in detail — a generic or
+            boilerplate link (e.g. a template repo, not your actual product) will cause reviews to be
+            checked against the wrong information. If you're not sure, leave this blank.
+          </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
