@@ -708,3 +708,69 @@ function CreateCampaign({ onCreated }: { onCreated: (campaignId: string | null) 
     </div>
   );
 }
+
+function LaunchedCard({
+  campaignId,
+  productName,
+  rewardGen,
+  onOpen,
+}: {
+  campaignId: string;
+  productName: string;
+  rewardGen: string;
+  onOpen: () => void;
+}) {
+  return (
+    <div className="glass-card rise-in mx-auto max-w-2xl p-8 text-center">
+      <span className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-success/12 text-success">
+        <CheckCircle2 size={26} />
+      </span>
+      <h2 className="mt-5 text-2xl font-bold tracking-tight">Your campaign is live</h2>
+      <p className="mt-2 text-sm text-muted-foreground">
+        <span className="font-medium text-foreground">{productName}</span> is now open for testers.
+        Each accepted review is paid <Gold>{rewardGen} GEN</Gold>, first-come first-served, until the
+        budget runs out.
+      </p>
+
+      <div className="mt-7 text-left">
+        <p className="text-sm font-semibold">Share this link</p>
+        <p className="mt-1 mb-3 text-xs text-muted-foreground">
+          Anyone with this link lands straight on your project — no wallet needed to look around.
+        </p>
+        <CopyLinkRow campaignId={campaignId} />
+      </div>
+
+      <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+        <a
+          href={xShareUrl(campaignId, productName)}
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center gap-1.5 rounded-full border border-border bg-white/70 px-4 py-2 text-sm font-medium hover:bg-white"
+        >
+          Share on X <ExternalLink size={14} />
+        </a>
+        <ShareButton
+          campaignId={campaignId}
+          productName={productName}
+          label="More sharing options"
+          className="px-4 py-2 text-sm"
+        />
+      </div>
+
+      <div className="mt-7 flex flex-wrap items-center justify-center gap-2">
+        <button
+          onClick={onOpen}
+          className="gradient-brand rounded-full px-6 py-2.5 text-sm font-semibold text-white"
+        >
+          View project
+        </button>
+        <Link
+          to="/profile"
+          className="rounded-full border border-border bg-white/70 px-5 py-2.5 text-sm font-medium hover:bg-white"
+        >
+          Go to my profile
+        </Link>
+      </div>
+    </div>
+  );
+}
