@@ -259,7 +259,8 @@ function CampaignDetail({ campaignId, onBack }: { campaignId: string; onBack: ()
     void load();
   }, [load]);
 
-  // One review per wallet: look for a review this wallet already left here.
+  // Most recent review this wallet left here. Paid = permanent lockout,
+  // pending = must wait, rejected = may try again.
   const loadMine = useCallback(async () => {
     if (!address) {
       setMyReview(null);
@@ -268,9 +269,8 @@ function CampaignDetail({ campaignId, onBack }: { campaignId: string; onBack: ()
     setCheckingExisting(true);
     try {
       const list = await getReviewsForCampaign(readClient, campaignId);
-      setMyReview(
-        list.find((r) => r.reviewer?.toLowerCase() === address.toLowerCase()) ?? null,
-      );
+      const mine = list.filter((r) => r.reviewer?.toLowerCase() === address.toLowerCase());
+      setMyReview(mine.length ? mine[mine.length - 1] : null);
     } catch {
       /* non-fatal: the contract is the final guard */
     } finally {
@@ -284,8 +284,30 @@ function CampaignDetail({ campaignId, onBack }: { campaignId: string; onBack: ()
 
   const isOwner = !!address && !!campaign && campaign.owner.toLowerCase() === address.toLowerCase();
 
+  const minePending = myReview?.verdict?.status === "not_checked";
+  const minePaid = myReview?.verdict?.accepted === true && myReview?.verdict?.paid === true;
+  const mineAccepted = myReview?.verdict?.accepted === true;
+  const mineRejected = !!myReview && !minePending && !mineAccepted;
+
+  const onRecheck = async () => {
+    if (!client || !myReview) return;
+    setError(null);
+    setStage("checking");
+    try {
+      await checkReview(client, myReview.review_id);
+      setVerdict(await getVerdict(readClient, myReview.review_id));
+      setStage("idle");
+      void load();
+      void loadMine();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      setStage("idle");
+    }
+  };
+
   const onSubmit = async () => {
-    if (!client || !campaign || !reviewText.trim() || myReview) return;
+    if (!client || !campaign || !reviewText.trim()) return;
+    if (minePending || mineAccepted) return;
     setError(null);
     setVerdict(null);
     setStage("submitting");
