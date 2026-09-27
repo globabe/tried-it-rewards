@@ -446,11 +446,32 @@ function CampaignDetail({ campaignId, onBack }: { campaignId: string; onBack: ()
               <h3 className="text-lg font-semibold">This campaign is closed</h3>
               <p className="mt-1 text-sm text-muted-foreground">It's no longer accepting reviews.</p>
             </>
-          ) : myReview && stage !== "done" ? (
+          ) : myReview && minePending && stage !== "done" ? (
+            <>
+              <h3 className="text-lg font-semibold">Your review is being checked</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                GenLayer's validators are evaluating it against the campaign's criteria. You can
+                submit another one only after this result comes back.
+              </p>
+              <p className="mt-4 whitespace-pre-wrap rounded-xl bg-white/70 p-4 text-sm">
+                {myReview.review_text}
+              </p>
+              <button
+                onClick={() => void onRecheck()}
+                disabled={!client || stage === "checking"}
+                className="gradient-brand mt-4 flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                {stage === "checking" && <Loader2 size={16} className="animate-spin" />}
+                {stage === "checking" ? "Checking…" : "Check the result now"}
+              </button>
+            </>
+          ) : myReview && mineAccepted && stage !== "done" ? (
             <>
               <h3 className="text-lg font-semibold">You already reviewed this project</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                One review per wallet, so the rewards spread across different testers.
+                {minePaid
+                  ? "Your review was accepted and paid, so this project is complete for your wallet."
+                  : "Your review was accepted, so this project is complete for your wallet."}
               </p>
               <p className="mt-4 whitespace-pre-wrap rounded-xl bg-white/70 p-4 text-sm">
                 {myReview.review_text}
