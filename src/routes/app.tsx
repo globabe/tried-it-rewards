@@ -270,7 +270,7 @@ function CampaignDetail({ campaignId, onBack }: { campaignId: string; onBack: ()
     try {
       const list = await getReviewsForCampaign(readClient, campaignId);
       const mine = list.filter((r) => r.reviewer?.toLowerCase() === address.toLowerCase());
-      setMyReview(mine.length ? mine[mine.length - 1] : null);
+      setMyReview(mine.length ? (mine[mine.length - 1] ?? null) : null);
     } catch {
       /* non-fatal: the contract is the final guard */
     } finally {
