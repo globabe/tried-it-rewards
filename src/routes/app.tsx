@@ -576,7 +576,7 @@ function CreateCampaign({ onCreated }: { onCreated: (campaignId: string | null) 
     try {
       await createCampaign(client, form);
       setDone(true);
-      // Find the campaign we just created so we can open it.
+      // Find the campaign we just created so we can link to it.
       let newId: string | null = null;
       try {
         const count = await getCampaignCount(readClient);
@@ -590,13 +590,15 @@ function CreateCampaign({ onCreated }: { onCreated: (campaignId: string | null) 
       } catch {
         /* fall back to profile */
       }
-      setTimeout(() => onCreated(newId), 900);
+      if (newId) setCreatedId(newId);
+      else setTimeout(() => onCreated(null), 900);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(false);
     }
   };
+
 
   const field =
     "w-full rounded-xl border border-border bg-white/80 p-3.5 text-sm outline-none focus:ring-2 focus:ring-ring/40";
