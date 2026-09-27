@@ -259,7 +259,8 @@ function CampaignDetail({ campaignId, onBack }: { campaignId: string; onBack: ()
     void load();
   }, [load]);
 
-  // One review per wallet: look for a review this wallet already left here.
+  // Most recent review this wallet left here. Paid = permanent lockout,
+  // pending = must wait, rejected = may try again.
   const loadMine = useCallback(async () => {
     if (!address) {
       setMyReview(null);
@@ -268,9 +269,8 @@ function CampaignDetail({ campaignId, onBack }: { campaignId: string; onBack: ()
     setCheckingExisting(true);
     try {
       const list = await getReviewsForCampaign(readClient, campaignId);
-      setMyReview(
-        list.find((r) => r.reviewer?.toLowerCase() === address.toLowerCase()) ?? null,
-      );
+      const mine = list.filter((r) => r.reviewer?.toLowerCase() === address.toLowerCase());
+      setMyReview(mine.length ? (mine[mine.length - 1] ?? null) : null);
     } catch {
       /* non-fatal: the contract is the final guard */
     } finally {
@@ -284,8 +284,30 @@ function CampaignDetail({ campaignId, onBack }: { campaignId: string; onBack: ()
 
   const isOwner = !!address && !!campaign && campaign.owner.toLowerCase() === address.toLowerCase();
 
+  const minePending = myReview?.verdict?.status === "not_checked";
+  const minePaid = myReview?.verdict?.accepted === true && myReview?.verdict?.paid === true;
+  const mineAccepted = myReview?.verdict?.accepted === true;
+  const mineRejected = !!myReview && !minePending && !mineAccepted;
+
+  const onRecheck = async () => {
+    if (!client || !myReview) return;
+    setError(null);
+    setStage("checking");
+    try {
+      await checkReview(client, myReview.review_id);
+      setVerdict(await getVerdict(readClient, myReview.review_id));
+      setStage("idle");
+      void load();
+      void loadMine();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      setStage("idle");
+    }
+  };
+
   const onSubmit = async () => {
-    if (!client || !campaign || !reviewText.trim() || myReview) return;
+    if (!client || !campaign || !reviewText.trim()) return;
+    if (minePending || mineAccepted) return;
     setError(null);
     setVerdict(null);
     setStage("submitting");
@@ -424,11 +446,32 @@ function CampaignDetail({ campaignId, onBack }: { campaignId: string; onBack: ()
               <h3 className="text-lg font-semibold">This campaign is closed</h3>
               <p className="mt-1 text-sm text-muted-foreground">It's no longer accepting reviews.</p>
             </>
-          ) : myReview && stage !== "done" ? (
+          ) : myReview && minePending && stage !== "done" ? (
+            <>
+              <h3 className="text-lg font-semibold">Your review is being checked</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                GenLayer's validators are evaluating it against the campaign's criteria. You can
+                submit another one only after this result comes back.
+              </p>
+              <p className="mt-4 whitespace-pre-wrap rounded-xl bg-white/70 p-4 text-sm">
+                {myReview.review_text}
+              </p>
+              <button
+                onClick={() => void onRecheck()}
+                disabled={!client || stage === "checking"}
+                className="gradient-brand mt-4 flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                {stage === "checking" && <Loader2 size={16} className="animate-spin" />}
+                {stage === "checking" ? "Checking…" : "Check the result now"}
+              </button>
+            </>
+          ) : myReview && mineAccepted && stage !== "done" ? (
             <>
               <h3 className="text-lg font-semibold">You already reviewed this project</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                One review per wallet, so the rewards spread across different testers.
+                {minePaid
+                  ? "Your review was accepted and paid, so this project is complete for your wallet."
+                  : "Your review was accepted, so this project is complete for your wallet."}
               </p>
               <p className="mt-4 whitespace-pre-wrap rounded-xl bg-white/70 p-4 text-sm">
                 {myReview.review_text}
@@ -437,11 +480,23 @@ function CampaignDetail({ campaignId, onBack }: { campaignId: string; onBack: ()
             </>
           ) : (
             <>
-              <h3 className="text-lg font-semibold">Submit your review</h3>
+              <h3 className="text-lg font-semibold">
+                {mineRejected && stage !== "done" ? "Update and try again" : "Submit your review"}
+              </h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                One review per wallet. Cover what the campaign asks for — your review is evaluated
-                against the campaign's criteria by GenLayer's validators.
+                {mineRejected && stage !== "done"
+                  ? "Your last review wasn't accepted. Address the reason below and send a new one."
+                  : "Cover what the campaign asks for — your review is evaluated against the campaign's criteria by GenLayer's validators."}
               </p>
+              {mineRejected && stage !== "done" && myReview && (
+                <div className="mt-4">
+                  <p className="text-sm font-semibold">Your previous review</p>
+                  <p className="mt-2 whitespace-pre-wrap rounded-xl bg-white/70 p-4 text-sm">
+                    {myReview.review_text}
+                  </p>
+                  {campaign && <VerdictPanel verdict={myReview.verdict} campaign={campaign} />}
+                </div>
+              )}
               <textarea
                 value={reviewText}
                 onChange={(e) => setReviewText(e.target.value)}

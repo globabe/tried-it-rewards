@@ -11,7 +11,7 @@ import { TransactionStatus } from "genlayer-js/types";
 
 export { studioDevnet };
 
-export const CONTRACT_ADDRESS = "0x3ea24C0B49e518ea16814Ffa0236F67D0c79D48b";
+export const CONTRACT_ADDRESS = "0x986E3E616Bda3ae0aaD457Ed9e0986DD6C6311B4";
 
 export type GenClient = ReturnType<typeof createClient>;
 
