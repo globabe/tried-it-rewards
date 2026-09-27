@@ -608,6 +608,19 @@ function CreateCampaign({ onCreated }: { onCreated: (campaignId: string | null) 
   const field =
     "w-full rounded-xl border border-border bg-white/80 p-3.5 text-sm outline-none focus:ring-2 focus:ring-ring/40";
 
+  if (createdId) {
+    return (
+      <LaunchedCard
+        campaignId={createdId}
+        productName={form.productName}
+        rewardGen={form.rewardPerReviewGen}
+        onOpen={() => onCreated(createdId)}
+      />
+    );
+  }
+
+
+
   return (
     <div className="glass-card mx-auto max-w-2xl p-7">
       <h2 className="text-2xl font-bold tracking-tight">Launch a project</h2>
