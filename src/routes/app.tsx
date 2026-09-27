@@ -370,8 +370,12 @@ function CampaignDetail({ campaignId, onBack }: { campaignId: string; onBack: ()
             <>
               <div className="flex items-start justify-between gap-3">
                 <h2 className="text-2xl font-bold tracking-tight">{campaign.product_name}</h2>
-                <StatusBadge closed={campaign.closed} />
+                <div className="flex shrink-0 items-center gap-2">
+                  <ShareButton campaignId={campaign.campaign_id} productName={campaign.product_name} />
+                  <StatusBadge closed={campaign.closed} />
+                </div>
               </div>
+
               {campaign.product_link && (
                 <a
                   href={campaign.product_link}

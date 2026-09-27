@@ -5,6 +5,8 @@ import { Nav } from "@/components/site/Nav";
 import { Footer } from "@/components/site/Footer";
 import { CampaignCard, Gold, VerdictPanel } from "@/components/app/CampaignCard";
 import { summarizeReviews } from "@/components/app/ProjectReviews";
+import { ShareButton } from "@/components/app/ShareCampaign";
+
 import { useCampaignList } from "@/hooks/use-campaigns";
 import {
   getVerdict,
@@ -158,12 +160,16 @@ function MyProjects({ address }: { address: string }) {
           {mine.map((c) => (
             <div key={c.campaign_id} className="flex flex-col gap-2">
               <CampaignCard campaign={c} />
+              <div className="flex items-center justify-end px-1">
+                <ShareButton campaignId={c.campaign_id} productName={c.product_name} label="Share link" />
+              </div>
               <FeedbackSummary
                 campaignId={c.campaign_id}
                 reviews={reviews ? reviews.filter((r) => r.campaign_id === c.campaign_id) : null}
               />
             </div>
           ))}
+
         </div>
       )}
     </section>
