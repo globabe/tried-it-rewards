@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   ArrowLeft,
+  CheckCircle2,
   ExternalLink,
   Loader2,
   Plus,
@@ -11,7 +12,9 @@ import {
 import { Nav } from "@/components/site/Nav";
 import { Footer } from "@/components/site/Footer";
 import { CampaignCard, Gold, StatusBadge, VerdictPanel } from "@/components/app/CampaignCard";
+import { CopyLinkRow, ShareButton, xShareUrl } from "@/components/app/ShareCampaign";
 import { ProjectReviews } from "@/components/app/ProjectReviews";
+
 import { useCampaignList } from "@/hooks/use-campaigns";
 import {
   campaignKey,
@@ -367,8 +370,12 @@ function CampaignDetail({ campaignId, onBack }: { campaignId: string; onBack: ()
             <>
               <div className="flex items-start justify-between gap-3">
                 <h2 className="text-2xl font-bold tracking-tight">{campaign.product_name}</h2>
-                <StatusBadge closed={campaign.closed} />
+                <div className="flex shrink-0 items-center gap-2">
+                  <ShareButton campaignId={campaign.campaign_id} productName={campaign.product_name} />
+                  <StatusBadge closed={campaign.closed} />
+                </div>
               </div>
+
               {campaign.product_link && (
                 <a
                   href={campaign.product_link}
@@ -557,6 +564,8 @@ function CreateCampaign({ onCreated }: { onCreated: (campaignId: string | null) 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [createdId, setCreatedId] = useState<string | null>(null);
+
 
   const set =
     (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -576,7 +585,7 @@ function CreateCampaign({ onCreated }: { onCreated: (campaignId: string | null) 
     try {
       await createCampaign(client, form);
       setDone(true);
-      // Find the campaign we just created so we can open it.
+      // Find the campaign we just created so we can link to it.
       let newId: string | null = null;
       try {
         const count = await getCampaignCount(readClient);
@@ -590,7 +599,8 @@ function CreateCampaign({ onCreated }: { onCreated: (campaignId: string | null) 
       } catch {
         /* fall back to profile */
       }
-      setTimeout(() => onCreated(newId), 900);
+      if (newId) setCreatedId(newId);
+      else setTimeout(() => onCreated(null), 900);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -598,8 +608,22 @@ function CreateCampaign({ onCreated }: { onCreated: (campaignId: string | null) 
     }
   };
 
+
   const field =
     "w-full rounded-xl border border-border bg-white/80 p-3.5 text-sm outline-none focus:ring-2 focus:ring-ring/40";
+
+  if (createdId) {
+    return (
+      <LaunchedCard
+        campaignId={createdId}
+        productName={form.productName}
+        rewardGen={form.rewardPerReviewGen}
+        onOpen={() => onCreated(createdId)}
+      />
+    );
+  }
+
+
 
   return (
     <div className="glass-card mx-auto max-w-2xl p-7">
@@ -685,6 +709,72 @@ function CreateCampaign({ onCreated }: { onCreated: (campaignId: string | null) 
       <p className="mt-6 text-xs text-muted-foreground">
         Amounts are entered in GEN and converted once, explicitly, before the transaction is sent.
       </p>
+    </div>
+  );
+}
+
+function LaunchedCard({
+  campaignId,
+  productName,
+  rewardGen,
+  onOpen,
+}: {
+  campaignId: string;
+  productName: string;
+  rewardGen: string;
+  onOpen: () => void;
+}) {
+  return (
+    <div className="glass-card rise-in mx-auto max-w-2xl p-8 text-center">
+      <span className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-success/12 text-success">
+        <CheckCircle2 size={26} />
+      </span>
+      <h2 className="mt-5 text-2xl font-bold tracking-tight">Your campaign is live</h2>
+      <p className="mt-2 text-sm text-muted-foreground">
+        <span className="font-medium text-foreground">{productName}</span> is now open for testers.
+        Each accepted review is paid <Gold>{rewardGen} GEN</Gold>, first-come first-served, until the
+        budget runs out.
+      </p>
+
+      <div className="mt-7 text-left">
+        <p className="text-sm font-semibold">Share this link</p>
+        <p className="mt-1 mb-3 text-xs text-muted-foreground">
+          Anyone with this link lands straight on your project — no wallet needed to look around.
+        </p>
+        <CopyLinkRow campaignId={campaignId} />
+      </div>
+
+      <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+        <a
+          href={xShareUrl(campaignId, productName)}
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center gap-1.5 rounded-full border border-border bg-white/70 px-4 py-2 text-sm font-medium hover:bg-white"
+        >
+          Share on X <ExternalLink size={14} />
+        </a>
+        <ShareButton
+          campaignId={campaignId}
+          productName={productName}
+          label="More sharing options"
+          className="px-4 py-2 text-sm"
+        />
+      </div>
+
+      <div className="mt-7 flex flex-wrap items-center justify-center gap-2">
+        <button
+          onClick={onOpen}
+          className="gradient-brand rounded-full px-6 py-2.5 text-sm font-semibold text-white"
+        >
+          View project
+        </button>
+        <Link
+          to="/profile"
+          className="rounded-full border border-border bg-white/70 px-5 py-2.5 text-sm font-medium hover:bg-white"
+        >
+          Go to my profile
+        </Link>
+      </div>
     </div>
   );
 }
