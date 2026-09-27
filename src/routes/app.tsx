@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   ArrowLeft,
+  CheckCircle2,
   ExternalLink,
   Loader2,
   Plus,
@@ -11,7 +12,9 @@ import {
 import { Nav } from "@/components/site/Nav";
 import { Footer } from "@/components/site/Footer";
 import { CampaignCard, Gold, StatusBadge, VerdictPanel } from "@/components/app/CampaignCard";
+import { CopyLinkRow, ShareButton, xShareUrl } from "@/components/app/ShareCampaign";
 import { ProjectReviews } from "@/components/app/ProjectReviews";
+
 import { useCampaignList } from "@/hooks/use-campaigns";
 import {
   campaignKey,
@@ -557,6 +560,8 @@ function CreateCampaign({ onCreated }: { onCreated: (campaignId: string | null) 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [createdId, setCreatedId] = useState<string | null>(null);
+
 
   const set =
     (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
