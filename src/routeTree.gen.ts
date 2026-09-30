@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as ApiPublicCampaignImageSplatRouteImport } from './routes/api/public/campaign-image/$'
+import { Route as ApiPublicCampaignImageUploadRouteImport } from './routes/api/public/campaign-image/upload'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,35 +30,71 @@ const ProfileRoute = ProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCampaignImageSplatRoute =
+  ApiPublicCampaignImageSplatRouteImport.update({
+    id: '/api/public/campaign-image/$',
+    path: '/api/public/campaign-image/$',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCampaignImageUploadRoute =
+  ApiPublicCampaignImageUploadRouteImport.update({
+    id: '/api/public/campaign-image/upload',
+    path: '/api/public/campaign-image/upload',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRoute
   '/profile': typeof ProfileRoute
+  '/api/public/campaign-image/$': typeof ApiPublicCampaignImageSplatRoute
+  '/api/public/campaign-image/upload': typeof ApiPublicCampaignImageUploadRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/app': typeof AppRoute
   '/profile': typeof ProfileRoute
+  '/api/public/campaign-image/$': typeof ApiPublicCampaignImageSplatRoute
+  '/api/public/campaign-image/upload': typeof ApiPublicCampaignImageUploadRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRoute
   '/profile': typeof ProfileRoute
+  '/api/public/campaign-image/$': typeof ApiPublicCampaignImageSplatRoute
+  '/api/public/campaign-image/upload': typeof ApiPublicCampaignImageUploadRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/app' | '/profile'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/profile'
+    | '/api/public/campaign-image/$'
+    | '/api/public/campaign-image/upload'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/app' | '/profile'
-  id: '__root__' | '/' | '/app' | '/profile'
+  to:
+    | '/'
+    | '/app'
+    | '/profile'
+    | '/api/public/campaign-image/$'
+    | '/api/public/campaign-image/upload'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/profile'
+    | '/api/public/campaign-image/$'
+    | '/api/public/campaign-image/upload'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRoute
   ProfileRoute: typeof ProfileRoute
+  ApiPublicCampaignImageSplatRoute: typeof ApiPublicCampaignImageSplatRoute
+  ApiPublicCampaignImageUploadRoute: typeof ApiPublicCampaignImageUploadRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +120,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/campaign-image/$': {
+      id: '/api/public/campaign-image/$'
+      path: '/api/public/campaign-image/$'
+      fullPath: '/api/public/campaign-image/$'
+      preLoaderRoute: typeof ApiPublicCampaignImageSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/campaign-image/upload': {
+      id: '/api/public/campaign-image/upload'
+      path: '/api/public/campaign-image/upload'
+      fullPath: '/api/public/campaign-image/upload'
+      preLoaderRoute: typeof ApiPublicCampaignImageUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +141,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRoute,
   ProfileRoute: ProfileRoute,
+  ApiPublicCampaignImageSplatRoute: ApiPublicCampaignImageSplatRoute,
+  ApiPublicCampaignImageUploadRoute: ApiPublicCampaignImageUploadRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
