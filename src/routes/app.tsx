@@ -565,6 +565,26 @@ function CreateCampaign({ onCreated }: { onCreated: (campaignId: string | null) 
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [createdId, setCreatedId] = useState<string | null>(null);
+  const [imageMode, setImageMode] = useState<"upload" | "link">("upload");
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const uploadImage = async (file: File) => {
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch("/api/public/campaign-image/upload", { method: "POST", body });
+      const json = (await res.json()) as { url?: string; error?: string };
+      if (!res.ok || !json.url) throw new Error(json.error ?? "Upload failed");
+      setForm((f) => ({ ...f, productImageUrl: json.url! }));
+    } catch (e) {
+      setUploadError(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
 
 
   const set =
@@ -642,8 +662,87 @@ function CreateCampaign({ onCreated }: { onCreated: (campaignId: string | null) 
           <input className={`${field} mt-1.5`} value={form.productLink} onChange={set("productLink")} placeholder="https://…" />
         </div>
         <div>
-          <label className="text-sm font-medium">Product image URL</label>
-          <input className={`${field} mt-1.5`} value={form.productImageUrl} onChange={set("productImageUrl")} placeholder="https://…/image.png" />
+          <label className="text-sm font-medium">Product image</label>
+          <div className="mt-1.5 flex gap-1 rounded-full bg-white/70 p-1 text-xs font-semibold w-fit">
+            <button
+              type="button"
+              onClick={() => setImageMode("upload")}
+              className={`rounded-full px-3 py-1.5 ${imageMode === "upload" ? "gradient-brand text-white" : "text-muted-foreground"}`}
+            >
+              Upload image
+            </button>
+            <button
+              type="button"
+              onClick={() => setImageMode("link")}
+              className={`rounded-full px-3 py-1.5 ${imageMode === "link" ? "gradient-brand text-white" : "text-muted-foreground"}`}
+            >
+              Paste link
+            </button>
+          </div>
+
+          {imageMode === "upload" ? (
+            <div className="mt-3">
+              <label
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const f = e.dataTransfer.files?.[0];
+                  if (f) void uploadImage(f);
+                }}
+                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-white/60 p-6 text-center text-sm text-muted-foreground hover:bg-white/80"
+              >
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif,image/avif"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) void uploadImage(f);
+                  }}
+                />
+                {uploading ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 size={16} className="animate-spin text-primary" /> Uploading…
+                  </span>
+                ) : (
+                  <>
+                    <span className="font-medium text-foreground">
+                      Click to choose a file, or drop one here
+                    </span>
+                    <span className="text-xs">PNG, JPG, WebP or GIF · up to 5MB</span>
+                  </>
+                )}
+              </label>
+              {uploadError && <p className="mt-2 text-xs text-danger">{uploadError}</p>}
+            </div>
+          ) : (
+            <input
+              className={`${field} mt-3`}
+              value={form.productImageUrl}
+              onChange={set("productImageUrl")}
+              placeholder="https://…/image.png"
+            />
+          )}
+
+          {form.productImageUrl && (
+            <div className="mt-3 flex items-center gap-3 rounded-xl bg-white/70 p-3">
+              <img
+                src={form.productImageUrl}
+                alt="Product preview"
+                className="h-16 w-16 rounded-lg object-cover"
+              />
+              <p className="flex-1 truncate text-xs text-muted-foreground">
+                {form.productImageUrl}
+              </p>
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, productImageUrl: "" }))}
+                className="rounded-full border border-border px-3 py-1.5 text-xs font-semibold"
+              >
+                Remove
+              </button>
+            </div>
+          )}
         </div>
         <div>
           <label className="text-sm font-medium">Review criteria</label>
